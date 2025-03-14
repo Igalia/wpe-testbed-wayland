@@ -33,6 +33,7 @@
 #include <cassert>
 
 #include <signal.h>
+#include <unistd.h>
 
 /* XDG surface */
 static void xdg_surface_configure(void*, struct xdg_surface* xdg_surface, uint32_t serial)
