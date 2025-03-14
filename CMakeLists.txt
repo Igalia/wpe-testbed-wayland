@@ -39,6 +39,12 @@ foreach (protocol stable/xdg-shell/xdg-shell unstable/linux-dmabuf/linux-dmabuf-
     run_wayland_scanner("${protocol}" "${CMAKE_BINARY_DIR}/${WAYLAND_PROTOCOLS_DEST_DIR}")
 endforeach ()
 
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_LIBRARIES ${GBM_LIBRARIES})
+set(CMAKE_REQUIRED_INCLUDES ${GBM_INCLUDE_DIRS})
+check_symbol_exists(gbm_bo_create_with_modifiers2 "gbm.h" HAVE_GBM_BO_CREATE_WITH_MODIFIERS2)
+check_symbol_exists(gbm_bo_get_fd_for_plane "gbm.h" HAVE_GBM_BO_GET_FD_FOR_PLANE)
+
 add_executable(wpe-testbed-wayland
     Application.cpp
     DMABuffer.cpp
@@ -56,6 +62,14 @@ add_executable(wpe-testbed-wayland
     ${CMAKE_BINARY_DIR}/${WAYLAND_PROTOCOLS_DEST_DIR}/linux-dmabuf-unstable-v1-protocol.c
     ${CMAKE_BINARY_DIR}/${WAYLAND_PROTOCOLS_DEST_DIR}/linux-explicit-synchronization-unstable-v1-protocol.c
 )
+
+if (HAVE_GBM_BO_CREATE_WITH_MODIFIERS2)
+    target_compile_definitions(wpe-testbed-wayland PRIVATE -DHAVE_GBM_BO_CREATE_WITH_MODIFIERS2)
+endif ()
+
+if (HAVE_GBM_BO_GET_FD_FOR_PLANE)
+    target_compile_definitions(wpe-testbed-wayland PRIVATE -DHAVE_GBM_BO_GET_FD_FOR_PLANE)
+endif ()
 
 target_link_libraries(wpe-testbed-wayland
     m
