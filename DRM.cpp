@@ -22,6 +22,7 @@
 #include <cassert>
 
 #include <fcntl.h>
+#include <unistd.h>
 
 DRM::DRM(int fd)
     : m_fd(fd)
