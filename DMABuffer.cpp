@@ -34,6 +34,21 @@
 #include <unistd.h>
 #include <xf86drm.h>
 
+#ifndef HAVE_GBM_BO_GET_FD_FOR_PLANE
+static inline int gbm_bo_get_fd_for_plane(struct gbm_bo* bo, int plane)
+{
+    auto handle = gbm_bo_get_handle_for_plane(bo, plane);
+    if (handle.s32 == -1)
+        return -1;
+
+    int fd = -1;
+    if (drmPrimeHandleToFD(gbm_device_get_fd(gbm_bo_get_device(bo)), handle.u32, DRM_CLOEXEC, &fd) < 0)
+        return -1;
+
+    return fd;
+}
+#endif
+
 DMABuffer::DMABuffer(Role role, const EGL& egl, uint32_t format, uint32_t width, uint32_t height)
     : m_role(role)
     , m_egl(egl)
@@ -126,7 +141,12 @@ bool DMABuffer::allocateBufferObject(const DRM& drm, const GBM& gbm)
         *modifiers = bufferModifierToDRMModifier(args.tileBufferModifier);
 
     if (modifiersCount > 0) {
+#ifdef HAVE_GBM_BO_CREATE_WITH_MODIFIERS2
         m_gbmBufferObject = gbm_bo_create_with_modifiers2(gbm.device(), m_width, m_height, m_format, modifiers, modifiersCount, flags);
+#else
+        (void)flags;
+        m_gbmBufferObject = gbm_bo_create_with_modifiers(gbm.device(), m_width, m_height, m_format, modifiers, modifiersCount);
+#endif
         if (m_gbmBufferObject)
             m_modifier = gbm_bo_get_modifier(m_gbmBufferObject);
         free(modifiers);
