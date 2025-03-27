@@ -15,9 +15,21 @@ TODO: Ask Pablo.
 
 ## Build
 
-Build using cmake - should produce a `wpe-testbed-wayland` binary.
+Build using cmake:
 
-## Using it
+```
+mkdir build
+cd build
+cmake ..
+make -j8
+```
+
+Should produce a `wpe-testbed-wayland` binary.
+
+## Run
+
+Be careful: The default setting for `--drm-node-ipu` points to `/dev/dri/card1` and ``--drm-node-gpu` points to `/dev/dri/card0`.
+Make sure this matches your system, eventually adapt it to point to the same location, in case there's only a single DRM primary node.
 
 The testbed application contains many flags, to simulate the way WPE is rendering. Many different combinations can be tested.
 Get inspiration from the test scripts in the `scripts` subdirectory.
