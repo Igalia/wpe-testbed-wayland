@@ -79,6 +79,7 @@ std::unique_ptr<EGL> EGL::create(const GBM& gbm)
     if (!s_eglGetPlatformDisplayEXT)
         s_eglGetPlatformDisplayEXT = reinterpret_cast<decltype(s_eglGetPlatformDisplayEXT)>(eglGetProcAddress("eglGetPlatformDisplayEXT"));
 
+    fprintf(stderr, "GOT eglGetPlatformDisplayEXT %p\n", s_eglGetPlatformDisplayEXT);
     EGLDisplay display;
     if (s_eglGetPlatformDisplayEXT)
         display = s_eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_KHR, gbm.device(), nullptr);
