@@ -56,6 +56,7 @@ DMABuffer::DMABuffer(Role role, const EGL& egl, uint32_t format, uint32_t width,
     , m_width(width)
     , m_height(height)
 {
+    Logger::info("Create DMABuffer() using role %i format %i width %i height %i\n", role, format, width, height);
 }
 
 DMABuffer::~DMABuffer()
@@ -128,6 +129,7 @@ inline uint64_t bufferModifierToDRMModifier(const BufferModifier& bufferModifier
 
 bool DMABuffer::allocateBufferObject(const DRM& drm, const GBM& gbm)
 {
+fprintf(stderr, "1\n");
     auto& args = Application::commandLineArguments();
 
     uint32_t flags = GBM_BO_USE_RENDERING;
@@ -140,12 +142,15 @@ bool DMABuffer::allocateBufferObject(const DRM& drm, const GBM& gbm)
     } else
         *modifiers = bufferModifierToDRMModifier(args.tileBufferModifier);
 
+fprintf(stderr, "2\n");
     if (modifiersCount > 0) {
 #ifdef HAVE_GBM_BO_CREATE_WITH_MODIFIERS2
         m_gbmBufferObject = gbm_bo_create_with_modifiers2(gbm.device(), m_width, m_height, m_format, modifiers, modifiersCount, flags);
+fprintf(stderr, "3\n");
 #else
         (void)flags;
         m_gbmBufferObject = gbm_bo_create_with_modifiers(gbm.device(), m_width, m_height, m_format, modifiers, modifiersCount);
+fprintf(stderr, "4\n");
 #endif
         if (m_gbmBufferObject)
             m_modifier = gbm_bo_get_modifier(m_gbmBufferObject);
@@ -154,6 +159,7 @@ bool DMABuffer::allocateBufferObject(const DRM& drm, const GBM& gbm)
 
     // Fallback.
     if (!m_gbmBufferObject) {
+fprintf(stderr, "5\n");
         m_gbmBufferObject = gbm_bo_create(gbm.device(), m_width, m_height, m_format, flags | GBM_BO_USE_LINEAR);
         m_modifier = DRM_FORMAT_MOD_INVALID;
     }
@@ -161,6 +167,7 @@ bool DMABuffer::allocateBufferObject(const DRM& drm, const GBM& gbm)
     if (!m_gbmBufferObject)
         return false;
 
+fprintf(stderr, "6\n");
     m_planeCount = gbm_bo_get_plane_count(m_gbmBufferObject);
     for (uint32_t i = 0; i < m_planeCount; ++i) {
         if (args.tileUpdateMethod == TileUpdateMethod::GLTexSubImage2D)
@@ -174,6 +181,7 @@ bool DMABuffer::allocateBufferObject(const DRM& drm, const GBM& gbm)
         m_offsets[i] = gbm_bo_get_offset(m_gbmBufferObject, i);
     }
 
+fprintf(stderr, "7\n");
     return true;
 }
 
@@ -225,12 +233,14 @@ bool DMABuffer::createGLFrameBuffer()
     eglAttributes[attributeIndex] = EGL_NONE;
     assert(attributeIndex < (sizeof(eglAttributes) / sizeof(eglAttributes)[0]));
 
+fprintf(stderr, "8\n");
     m_eglImage = m_egl.eglCreateImageKHR(m_egl.display(), EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, nullptr, eglAttributes);
     if (m_eglImage == EGL_NO_IMAGE_KHR) {
         Logger::error("EGLImageKHR creation failed\n");
         return false;
     }
 
+fprintf(stderr, "9\n");
     eglMakeCurrent(m_egl.display(), EGL_NO_SURFACE, EGL_NO_SURFACE, m_egl.context());
 
     const bool isTile = m_format == DRM_FORMAT_ABGR8888;
@@ -238,18 +248,22 @@ bool DMABuffer::createGLFrameBuffer()
     // skip FBO creation for tiles or in rbo mode
     auto& args = Application::commandLineArguments();
     if (!args.rbo || isTile) {
+fprintf(stderr, "10\n");
         glGenTextures(1, &m_glTexture);
         glBindTexture(GL_TEXTURE_2D, m_glTexture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, args.linearFilter ? GL_LINEAR : GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, args.linearFilter ? GL_LINEAR : GL_NEAREST);
+fprintf(stderr, "11\n");
         m_egl.glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, m_eglImage);
+fprintf(stderr, "12\n");
     }
 
     if (isTile)
         return true;
 
+fprintf(stderr, "13\n");
     if (args.rbo) {
         glGenRenderbuffers(1, &m_glColorBuffer);
         glBindRenderbuffer(GL_RENDERBUFFER, m_glColorBuffer);
@@ -262,12 +276,14 @@ bool DMABuffer::createGLFrameBuffer()
     glGenRenderbuffers(1, &m_glDepthStencilBuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, m_glDepthStencilBuffer);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, m_width, m_height);
+fprintf(stderr, "14\n");
 
     if (args.rbo)
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_glColorBuffer);
     else
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_glTexture, 0);
 
+fprintf(stderr, "15\n");
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_glDepthStencilBuffer);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_glDepthStencilBuffer);
 
