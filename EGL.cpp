@@ -142,6 +142,13 @@ void EGL::initializeExtensions()
         glEGLImageTargetTexture2DOES = reinterpret_cast<decltype(glEGLImageTargetTexture2DOES)>(eglGetProcAddress("glEGLImageTargetTexture2DOES"));
         glEGLImageTargetRenderbufferStorageOES = reinterpret_cast<decltype(glEGLImageTargetRenderbufferStorageOES)>(eglGetProcAddress("glEGLImageTargetRenderbufferStorageOES"));
     }
+
+    // Verify at least those are available.
+    assert(eglCreateImageKHR);
+    assert(eglDestroyImageKHR);
+
+    assert(glEGLImageTargetTexture2DOES);
+    assert(glEGLImageTargetRenderbufferStorageOES);
 }
 
 void EGL::initialize()
