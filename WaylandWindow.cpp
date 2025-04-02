@@ -220,7 +220,8 @@ void WaylandWindow::createSurface()
     m_wlSurface = wl_compositor_create_surface(m_wayland.compositor());
     assert(m_wlSurface);
 
-    if (auto* xdgWmBase = m_wayland.xdgWmBase()) {
+    auto* xdgWmBase = m_wayland.xdgWmBase();
+    if (xdgWmBase) {
         m_xdgSurface = xdg_wm_base_get_xdg_surface(xdgWmBase, m_wlSurface);
         xdg_surface_add_listener(m_xdgSurface, &xdg_surface_listener, nullptr);
 
@@ -237,8 +238,15 @@ void WaylandWindow::createSurface()
 
     wl_surface_commit(m_wlSurface);
 
-    while (m_waitForConfigure)
-        wl_display_roundtrip(m_wayland.display());
+    if (xdgWmBase) {
+        Logger::info("Waiting for Wayland window configuration...\n");
+	while (m_waitForConfigure)
+            wl_display_roundtrip(m_wayland.display());
+	Logger::info("... finished!\n");
+    } else {
+        Logger::info("No xdg_wm_base protocol available - choosing 800x600 window size...\n");
+        setSize(800, 600); // FIXME:
+    }
 }
 
 void WaylandWindow::setSize(uint32_t width, uint32_t height)
