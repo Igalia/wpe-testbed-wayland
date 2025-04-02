@@ -73,8 +73,8 @@ int main(int argc, char** argv)
     }
 
     std::unique_ptr<EGL> egl;
-    if (args.eglPlatform == EGLPlatform::Wayland)
-        egl = EGL::createWaylandPlatformWithGBMSurface(*gbmIPU, waylandWindow->width(), waylandWindow->height());
+    if (args.eglPlatform == EGLPlatform::Default)
+        egl = EGL::createDefaultPlatform();
     else
         egl = EGL::createGBMPlatform(*gbmIPU);
     if (!egl) {

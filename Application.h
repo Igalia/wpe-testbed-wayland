@@ -42,7 +42,7 @@ enum class BufferModifier {
 
 enum class EGLPlatform {
     GBM,
-    Wayland
+    Default
 };
 
 class Application {

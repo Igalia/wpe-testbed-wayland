@@ -73,14 +73,9 @@ void EGL::dumpGLInformation()
     Logger::info("\n");
 }
 
-std::unique_ptr<EGL> EGL::createWaylandPlatformWithGBMSurface(const GBM& gbm, uint32_t width, uint32_t height)
+std::unique_ptr<EGL> EGL::createDefaultPlatform()
 {
-    auto& args = Application::commandLineArguments();
-    auto format = args.opaque ? GBM_FORMAT_XRGB8888 : GBM_FORMAT_ARGB8888;
-
-    auto surface = gbm_surface_create(gbm.device(), width, height, format, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
-    auto display = eglGetDisplay(reinterpret_cast<EGLNativeDisplayType>(surface));
-
+    auto display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (display == EGL_NO_DISPLAY) {
         Logger::error("Could not open EGL display\n");
         return nullptr;

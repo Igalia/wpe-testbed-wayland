@@ -36,7 +36,7 @@ public:
     EGL(EGLDisplay&&);
     ~EGL();
 
-    static std::unique_ptr<EGL> createWaylandPlatformWithGBMSurface(const GBM& gbm, uint32_t width, uint32_t height);
+    static std::unique_ptr<EGL> createDefaultPlatform();
     static std::unique_ptr<EGL> createGBMPlatform(const GBM&);
 
     void initialize();

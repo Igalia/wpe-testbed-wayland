@@ -49,7 +49,7 @@ struct CommandLineArgumentsParser : public argparse::Args {
 
     std::string& drmNodeGPU           = kwarg("drm-node-gpu", "DRM node (GPU)").set_default("/dev/dri/card0");
     std::string& drmNodeIPU           = kwarg("drm-node-ipu", "DRM node (IPU)").set_default("/dev/dri/card1");
-    std::string& eglPlatform          = kwarg("egl-platform", "EGL platform (gbm|wayland)").set_default("gbm");
+    std::string& eglPlatform          = kwarg("egl-platform", "EGL platform (gbm|default)").set_default("gbm");
     std::string& tileUpdateType       = kwarg("tile-update-type", "Tile update type (full|half|third)").set_default("full");
     std::string& tileUpdateMethod     = kwarg("tile-update-method", "Tile update method (gl|mmap|gbm)").set_default("gl");
     std::string& tileBufferModifier   = kwarg("tile-buffer-modifier", "Tile buffer DRM modifier, only relevant in --dmabuf-tiles mode (linear|vivante-tiled|vivante-super-tiled)").set_default("linear");
@@ -91,8 +91,8 @@ struct CommandLineArgumentsParser : public argparse::Args {
             if (eglPlatform == "gbm")
                 return EGLPlatform::GBM;
 
-            if (eglPlatform == "wayland")
-                return EGLPlatform::Wayland;
+            if (eglPlatform == "default")
+                return EGLPlatform::Default;
 
             Logger::error("Invalid --egl-platform='%s'. Aborting!\n", eglPlatform.c_str());
             abort();
