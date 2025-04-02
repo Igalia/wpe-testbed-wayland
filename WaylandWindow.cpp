@@ -242,10 +242,9 @@ void WaylandWindow::createSurface()
         Logger::info("Waiting for Wayland window configuration...\n");
 	while (m_waitForConfigure)
             wl_display_roundtrip(m_wayland.display());
-	Logger::info("... finished!\n");
     } else {
         Logger::info("No xdg_wm_base protocol available - choosing 800x600 window size...\n");
-        setSize(800, 600); // FIXME:
+        setSize(800, 600);
     }
 }
 

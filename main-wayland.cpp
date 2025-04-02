@@ -36,12 +36,14 @@ int main(int argc, char** argv)
         Logger::error("Failed to initialize DRM (IPU)\n");
         return -1;
     }
+    Logger::info("Initialized DRM (IPU)...\n");
 
     auto gbmIPU = GBM::create(drmIPU->fd());
     if (!gbmIPU) {
         Logger::error("Failed to initialize GBM (IPU)\n");
         return -1;
     }
+    Logger::info("Initialized DRM (IPU)...\n");
 
     std::unique_ptr<DRM> drmGPU;
     std::unique_ptr<GBM> gbmGPU;
@@ -52,12 +54,14 @@ int main(int argc, char** argv)
             Logger::error("Failed to initialize DRM (GPU)\n");
             return -1;
         }
+        Logger::info("Initialized DRM (GPU)...\n");
 
         gbmGPU = GBM::create(drmGPU->fd());
         if (!gbmGPU) {
             Logger::error("Failed to initialize GBM (GPU)\n");
             return -1;
         }
+        Logger::info("Initialized GBM (GPU)...\n");
     }
 
     auto wayland = Wayland::create(*drmIPU, *gbmIPU);
@@ -65,40 +69,51 @@ int main(int argc, char** argv)
         Logger::error("Failed to initialize Wayland\n");
         return -1;
     }
+    Logger::info("Initialized Wayland...\n");
 
     auto waylandWindow = WaylandWindow::create(*wayland.get());
     if (!waylandWindow) {
         Logger::error("Failed to initialize Wayland window\n");
         return -1;
     }
+    Logger::info("Initialized Wayland window...\n");
 
     std::unique_ptr<EGL> egl;
-    if (args.eglPlatform == EGLPlatform::Default)
+    if (args.eglPlatform == EGLPlatform::Default) {
         egl = EGL::createDefaultPlatform();
-    else
+        Logger::info("Initialized EGL default platform...\n");
+    } else {
         egl = EGL::createGBMPlatform(*gbmIPU);
+        Logger::info("Initialized EGL GBM platform...\n");
+    }
     if (!egl) {
         Logger::error("Failed to initialize EGL\n");
         return -1;
     }
 
     wayland->initializeWithEGL(*egl);
+    Logger::info("Initialized Wayland with EGL...\n");
 
     if (!waylandWindow->createBuffers()) {
         Logger::error("Failed to create Wayland window buffers\n");
         return -1;
     }
+    Logger::info("Created Wayland buffers...\n");
 
     auto tileRenderer = TileRenderer::create(args.tileCount, args.tileWidth, args.tileHeight, *egl);
     if (!tileRenderer) {
         Logger::error("Failed to initialize tile rendering\n");
         return -1;
     }
+    Logger::info("Created tile renderer...\n");
 
-    if (args.dmabufTiles)
+    if (args.dmabufTiles) {
         tileRenderer->allocateDMABufTiles(drmGPU ? *drmGPU : *drmIPU, gbmGPU ? *gbmGPU : *gbmIPU);
-    else
+        Logger::info("Allocated dma-buf tiles...\n");
+    } else {
         tileRenderer->allocateGLTiles();
+        Logger::info("Allocated GL tiles...\n");
+    }
 
     waylandWindow->setTileRenderer(std::move(tileRenderer));
     Logger::info("Starting. Executing render loop...\n");
