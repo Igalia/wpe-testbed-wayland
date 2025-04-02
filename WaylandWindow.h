@@ -35,11 +35,14 @@ class Wayland;
 
 class WaylandWindow {
 public:
-    WaylandWindow(const Wayland&, std::unique_ptr<TileRenderer>&&);
+    WaylandWindow(const Wayland&);
     ~WaylandWindow();
 
     static constexpr uint32_t numBuffers = 4;
-    static std::unique_ptr<WaylandWindow> create(const Wayland&, std::unique_ptr<TileRenderer>&&);
+    static std::unique_ptr<WaylandWindow> create(const Wayland&);
+
+    bool createBuffers();
+    void setTileRenderer(std::unique_ptr<TileRenderer>&&);
 
     void executeRenderLoop(Application&);
     void renderFrame(struct wl_callback*);
@@ -52,7 +55,6 @@ public:
     struct wl_surface* surface() const { return m_wlSurface; }
 
 private:
-    bool createBuffers();
     void createSurface();
     bool dmaBufferAssignmentFinished() const;
     DMABuffer* obtainBuffer();

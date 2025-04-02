@@ -60,15 +60,32 @@ int main(int argc, char** argv)
         }
     }
 
-    auto egl = EGL::create(*gbmIPU);
+    auto wayland = Wayland::create(*drmIPU, *gbmIPU);
+    if (!wayland) {
+        Logger::error("Failed to initialize Wayland\n");
+        return -1;
+    }
+
+    auto waylandWindow = WaylandWindow::create(*wayland.get());
+    if (!waylandWindow) {
+        Logger::error("Failed to initialize Wayland window\n");
+        return -1;
+    }
+
+    std::unique_ptr<EGL> egl;
+    if (args.eglPlatform == EGLPlatform::Wayland)
+        egl = EGL::createWaylandPlatformWithGBMSurface(*gbmIPU, waylandWindow->width(), waylandWindow->height());
+    else
+        egl = EGL::createGBMPlatform(*gbmIPU);
     if (!egl) {
         Logger::error("Failed to initialize EGL\n");
         return -1;
     }
 
-    auto wayland = Wayland::create(*drmIPU, *gbmIPU, *egl);
-    if (!wayland) {
-        Logger::error("Failed to initialize Wayland\n");
+    wayland->initializeWithEGL(*egl);
+
+    if (!waylandWindow->createBuffers()) {
+        Logger::error("Failed to create Wayland window buffers\n");
         return -1;
     }
 
@@ -83,12 +100,7 @@ int main(int argc, char** argv)
     else
         tileRenderer->allocateGLTiles();
 
-    auto waylandWindow = WaylandWindow::create(*wayland.get(), std::move(tileRenderer));
-    if (!waylandWindow) {
-        Logger::error("Failed to initialize Wayland window\n");
-        return -1;
-    }
-
+    waylandWindow->setTileRenderer(std::move(tileRenderer));
     Logger::info("Starting. Executing render loop...\n");
     waylandWindow->executeRenderLoop(app);
 

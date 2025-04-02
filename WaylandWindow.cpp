@@ -154,9 +154,8 @@ static const struct zwp_linux_buffer_release_v1_listener buffer_release_listener
     buffer_immediate_release,
 };
 
-WaylandWindow::WaylandWindow(const Wayland& wayland, std::unique_ptr<TileRenderer>&& tileRenderer)
+WaylandWindow::WaylandWindow(const Wayland& wayland)
     : m_wayland(wayland)
-    , m_tileRenderer(std::move(tileRenderer))
 {
     m_statistics.initialize();
 }
@@ -165,14 +164,17 @@ WaylandWindow::~WaylandWindow()
 {
 }
 
-std::unique_ptr<WaylandWindow> WaylandWindow::create(const Wayland& wayland, std::unique_ptr<TileRenderer>&& tileRenderer)
+void WaylandWindow::setTileRenderer(std::unique_ptr<TileRenderer>&& tileRenderer)
 {
-    auto waylandWindow = std::make_unique<WaylandWindow>(wayland, std::move(tileRenderer));
+    m_tileRenderer = std::move(tileRenderer);
+}
+
+std::unique_ptr<WaylandWindow> WaylandWindow::create(const Wayland& wayland)
+{
+    auto waylandWindow = std::make_unique<WaylandWindow>(wayland);
     assert(waylandWindow->m_waitForConfigure);
     waylandWindow->createSurface();
     assert(!waylandWindow->m_waitForConfigure);
-    if (!waylandWindow->createBuffers())
-        return nullptr;
     return waylandWindow;
 }
 
@@ -244,7 +246,6 @@ void WaylandWindow::setSize(uint32_t width, uint32_t height)
     m_width = width;
     m_height = height;
     m_waitForConfigure = false;
-    m_tileRenderer->initialize(width, height);
 }
 
 DMABuffer* WaylandWindow::obtainBuffer()
@@ -284,6 +285,11 @@ void WaylandWindow::renderFrame(struct wl_callback* callback)
         glEnable(GL_DEPTH_TEST);
     }
 
+    static bool s_initialized = false;
+    if (!s_initialized) {
+        s_initialized = true;
+        m_tileRenderer->initialize(m_width, m_height);
+    }
     m_tileRenderer->renderTiles();
 
     if (args.depth)

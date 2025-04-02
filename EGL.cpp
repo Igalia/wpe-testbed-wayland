@@ -73,13 +73,34 @@ void EGL::dumpGLInformation()
     Logger::info("\n");
 }
 
-std::unique_ptr<EGL> EGL::create(const GBM& gbm)
+std::unique_ptr<EGL> EGL::createWaylandPlatformWithGBMSurface(const GBM& gbm, uint32_t width, uint32_t height)
+{
+    auto& args = Application::commandLineArguments();
+    auto format = args.opaque ? GBM_FORMAT_XRGB8888 : GBM_FORMAT_ARGB8888;
+
+    auto surface = gbm_surface_create(gbm.device(), width, height, format, GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING);
+    auto display = eglGetDisplay(reinterpret_cast<EGLNativeDisplayType>(surface));
+
+    if (display == EGL_NO_DISPLAY) {
+        Logger::error("Could not open EGL display\n");
+        return nullptr;
+    }
+
+    EGLint major, minor;
+    if (!eglInitialize(display, &major, &minor)) {
+        Logger::error("Could not initialize EGL display\n");
+        return nullptr;
+    }
+
+    return std::make_unique<EGL>(std::move(display));
+}
+
+std::unique_ptr<EGL> EGL::createGBMPlatform(const GBM& gbm)
 {
     static PFNEGLGETPLATFORMDISPLAYEXTPROC s_eglGetPlatformDisplayEXT = nullptr;
     if (!s_eglGetPlatformDisplayEXT)
         s_eglGetPlatformDisplayEXT = reinterpret_cast<decltype(s_eglGetPlatformDisplayEXT)>(eglGetProcAddress("eglGetPlatformDisplayEXT"));
 
-    fprintf(stderr, "GOT eglGetPlatformDisplayEXT %p\n", s_eglGetPlatformDisplayEXT);
     EGLDisplay display;
     if (s_eglGetPlatformDisplayEXT)
         display = s_eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_KHR, gbm.device(), nullptr);

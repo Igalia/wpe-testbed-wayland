@@ -32,14 +32,15 @@ struct zwp_linux_dmabuf_v1;
 
 class Wayland {
 public:
-    Wayland(struct wl_display*, const DRM&, const GBM&, const EGL&);
+    Wayland(struct wl_display*, const DRM&, const GBM&);
     ~Wayland();
 
-    static std::unique_ptr<Wayland> create(const DRM&, const GBM&, const EGL&);
+    static std::unique_ptr<Wayland> create(const DRM&, const GBM&);
+    void initializeWithEGL(const EGL&);
 
     const DRM& drm() const { return m_drm; }
     const GBM& gbm() const { return m_gbm; }
-    const EGL& egl() const { return m_egl; }
+    const EGL& egl() const;
 
     struct wl_compositor* compositor() const { return m_wlCompositor; }
     struct wl_display* display() const { return m_wlDisplay; }
@@ -56,7 +57,7 @@ public:
 private:
     const DRM& m_drm;
     const GBM& m_gbm;
-    const EGL& m_egl;
+    const EGL* m_egl { nullptr };
 
     struct wl_display* m_wlDisplay { nullptr };
     struct wl_registry* m_wlRegistry { nullptr };
@@ -66,8 +67,9 @@ private:
     struct zwp_linux_dmabuf_v1* m_zwpLinuxDmabufV1 { nullptr };
     struct zwp_linux_explicit_synchronization_v1* m_zwpLinuxExplicitSynchronizationV1 { nullptr };
 
-    bool m_useExplicitSync { false };
-    bool m_formatSupported { false };
+    bool m_initialized : 1 { false };
+    bool m_useExplicitSync : 1 { false };
+    bool m_formatSupported : 1 { false };
     uint32_t m_format { 0 };
     uint64_t* m_modifiers { nullptr };
     uint32_t m_modifiersCount { 0 };

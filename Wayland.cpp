@@ -83,11 +83,10 @@ const struct xdg_surface_listener xdg_surface_listener = {
 };
 /* (end) XDG surface */
 
-Wayland::Wayland(struct wl_display* display, const DRM& drm, const GBM& gbm, const EGL& egl)
+Wayland::Wayland(struct wl_display* display, const DRM& drm, const GBM& gbm)
     : m_wlDisplay(display)
     , m_drm(drm)
     , m_gbm(gbm)
-    , m_egl(egl)
 {
     auto& args = Application::commandLineArguments();
     m_format = args.opaque ? DRM_FORMAT_XRGB8888 : DRM_FORMAT_ARGB8888;
@@ -101,11 +100,25 @@ Wayland::Wayland(struct wl_display* display, const DRM& drm, const GBM& gbm, con
 
     assert(m_wlCompositor);
     assert(m_xdgWmBase);
+}
 
+const EGL& Wayland::egl() const
+{
+    assert(m_initialized);
+    assert(m_egl);
+    return *m_egl;
+}
+
+void Wayland::initializeWithEGL(const EGL& egl)
+{
+    assert(!m_initialized);
+    m_egl = &egl;
+
+    auto& args = Application::commandLineArguments();
     if (args.explicitSync) {
-        m_useExplicitSync = m_egl.supportsExplicitSync() && m_zwpLinuxExplicitSynchronizationV1;
+        m_useExplicitSync = egl.supportsExplicitSync() && m_zwpLinuxExplicitSynchronizationV1;
 
-        if (!m_egl.supportsExplicitSync()) {
+        if (!egl.supportsExplicitSync()) {
             Logger::error("EGL does not support the required extension for explicit sync. Aborting!\n");
             abort();
         }
@@ -114,7 +127,10 @@ Wayland::Wayland(struct wl_display* display, const DRM& drm, const GBM& gbm, con
             Logger::error("Wayland zwp_linux_explicit_synchronization_v1 protocol not supported, cannot use explicit sync. Aborting!\n");
             abort();
         }
-    }
+    } else
+        m_useExplicitSync = false;
+
+    m_initialized = true;
 }
 
 Wayland::~Wayland()
@@ -160,7 +176,7 @@ void Wayland::registerInterface(struct wl_registry* registry, uint32_t id, const
     }
 }
 
-std::unique_ptr<Wayland> Wayland::create(const DRM& drm, const GBM& gbm, const EGL& egl)
+std::unique_ptr<Wayland> Wayland::create(const DRM& drm, const GBM& gbm)
 {
     Logger::info("Initializing Wayland...\n");
 
@@ -170,5 +186,5 @@ std::unique_ptr<Wayland> Wayland::create(const DRM& drm, const GBM& gbm, const E
         return nullptr;
     }
 
-    return std::make_unique<Wayland>(display, drm, gbm, egl);
+    return std::make_unique<Wayland>(display, drm, gbm);
 }

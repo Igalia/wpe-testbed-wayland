@@ -40,6 +40,11 @@ enum class BufferModifier {
     VivanteSuperTiled
 };
 
+enum class EGLPlatform {
+    GBM,
+    Wayland
+};
+
 class Application {
 public:
     static Application& create(int argc, char** argv);
@@ -68,6 +73,7 @@ public:
         std::string drmNodeGPU;
         std::string drmNodeIPU;
 
+        EGLPlatform eglPlatform { EGLPlatform::GBM };
         TileUpdateMethod tileUpdateMethod { TileUpdateMethod::GLTexSubImage2D };
         TileUpdateType tileUpdateType { TileUpdateType::FullUpdate };
         BufferModifier tileBufferModifier { BufferModifier::Linear };
